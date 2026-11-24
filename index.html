@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CottageMargin — Stop underpricing your baking</title>
+<meta name="description" content="CottageMargin is a recipe costing and profit-protection tool for bakers who sell: cottage bakers supplying cafés, weekly farmers-market vendors, and micro-bakeries. Cost every ingredient, your packaging, oven energy, labor, waste, and unsold items — then price to a real margin and share separate retail and wholesale price sheets.">
+<style>
+  :root{
+    --ink:#3a2a1e; --muted:#7d6a58; --brand:#a85b23; --brand-dark:#7c3f14;
+    --bg:#faf5ec; --card:#ffffff; --line:#e6d9c6; --accent:#f5e9d6;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+       background:var(--bg); color:var(--ink); line-height:1.55;}
+  .wrap{max-width:960px; margin:0 auto; padding:0 20px;}
+  header{background:var(--ink); color:#fff;}
+  header .wrap{display:flex; align-items:center; justify-content:space-between; padding:16px 20px;}
+  .logo{font-size:22px; font-weight:800; letter-spacing:.2px;}
+  .logo span{color:#e8a04c;}
+  header a{color:#fff; text-decoration:none; font-weight:600; font-size:15px;}
+  header a:hover{text-decoration:underline;}
+  .hero{padding:64px 0 48px; text-align:center;}
+  .hero h1{font-size:40px; line-height:1.15; max-width:720px; margin:0 auto 16px;}
+  .hero p{font-size:19px; color:var(--muted); max-width:640px; margin:0 auto 30px;}
+  .cta-row{display:flex; gap:14px; justify-content:center; flex-wrap:wrap;}
+  .btn{display:inline-block; padding:14px 28px; border-radius:8px; font-size:17px; font-weight:700;
+       text-decoration:none; border:2px solid transparent; cursor:pointer;}
+  .btn-primary{background:var(--brand); color:#fff;}
+  .btn-primary:hover{background:var(--brand-dark);}
+  .btn-outline{background:#fff; color:var(--brand-dark); border-color:var(--brand);}
+  .btn-outline:hover{background:var(--accent);}
+  .price-note{margin-top:14px; color:var(--muted); font-size:15px;}
+  section{padding:44px 0;}
+  h2{font-size:27px; text-align:center; margin-bottom:30px;}
+  .steps{display:grid; grid-template-columns:repeat(3,1fr); gap:18px;}
+  .step{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:24px;}
+  .step .num{width:36px; height:36px; border-radius:50%; background:var(--brand); color:#fff;
+             font-weight:800; display:flex; align-items:center; justify-content:center; margin-bottom:12px;}
+  .step h3{font-size:18px; margin-bottom:8px;}
+  .step p{color:var(--muted); font-size:15px;}
+  .features{display:grid; grid-template-columns:repeat(2,1fr); gap:18px;}
+  .feature{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:22px;}
+  .feature h3{font-size:17px; margin-bottom:6px;}
+  .feature p{color:var(--muted); font-size:15px;}
+  .feature .tag{display:inline-block; font-size:11.5px; font-weight:800; letter-spacing:.4px;
+                padding:2px 8px; border-radius:20px; margin-bottom:8px;}
+  .tag-free{background:var(--accent); color:var(--brand-dark);}
+  .tag-pro{background:var(--ink); color:#fff;}
+  .pricing{background:var(--card); border:1px solid var(--line); border-radius:12px;
+           max-width:540px; margin:0 auto; padding:34px; text-align:center;}
+  .pricing .badge{display:inline-block; background:#fdf0e6; color:#8a4b12;
+                  font-weight:800; font-size:13px; padding:4px 12px; border-radius:20px; margin-bottom:14px;}
+  .pricing .amount{font-size:46px; font-weight:800;}
+  .pricing .per{color:var(--muted); font-size:17px;}
+  .pricing .founding{margin-top:12px; font-size:15px; color:var(--ink);}
+  .pricing ul{list-style:none; margin:20px 0 26px; text-align:left;}
+  .pricing li{padding:7px 0 7px 26px; position:relative; color:var(--ink); font-size:15.5px;}
+  .pricing li::before{content:"✓"; position:absolute; left:0; color:var(--brand); font-weight:800;}
+  .honest{background:var(--accent); border-radius:10px; padding:20px 24px; max-width:720px; margin:0 auto;
+          color:var(--brand-dark); font-size:15.5px; text-align:center;}
+  /* Sample price sheet */
+  .sample-cap{text-align:center; color:var(--muted); font-size:14.5px; margin-top:14px;}
+  .sample-doc{background:#fff; border:1px solid var(--line); border-radius:6px; max-width:680px;
+              margin:0 auto; padding:38px 42px; box-shadow:0 4px 18px rgba(58,42,30,.07); text-align:left;}
+  .sample-doc .co{font-size:21px; font-weight:800; color:var(--ink);}
+  .sample-doc .contact{color:var(--muted); font-size:13.5px; margin-bottom:4px;}
+  .sample-doc .rule{height:3px; background:var(--brand); border-radius:2px; margin:10px 0 20px;}
+  .sample-doc h3{font-size:17px; margin-bottom:4px;}
+  .sample-doc .date{color:var(--muted); font-size:13.5px; margin-bottom:18px;}
+  .sample-doc h4{font-size:14.5px; margin:18px 0 8px;}
+  .sample-doc p, .sample-doc li{font-size:14.5px;}
+  .sample-doc ul{margin:0 0 6px 20px;}
+  .sample-doc .kv{display:flex; gap:10px; font-size:14.5px; padding:3px 0;}
+  .sample-doc .kv b{min-width:170px;}
+  .sample-doc .invest{font-size:16px; margin-top:6px;}
+  .sample-doc .invest b{color:var(--brand-dark); font-size:19px;}
+  .private-box{background:var(--accent); border:1px solid var(--line); border-radius:10px; max-width:680px;
+               margin:22px auto 0; padding:20px 24px;}
+  .private-box h4{font-size:15px; margin-bottom:10px;}
+  .private-box .kv{display:flex; gap:10px; font-size:14.5px; padding:3px 0;}
+  .private-box .kv b{min-width:230px;}
+  .policies{display:grid; grid-template-columns:1fr 1fr; gap:18px;}
+  .policy{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:22px;}
+  .policy h3{font-size:17px; margin-bottom:8px;}
+  .policy p{color:var(--muted); font-size:15px;}
+  footer{border-top:1px solid var(--line); padding:28px 0 40px; color:var(--muted); font-size:14.5px; text-align:center;}
+  footer a{color:var(--brand-dark);}
+  @media (max-width:720px){
+    .steps,.features,.policies{grid-template-columns:1fr;}
+    .hero h1{font-size:31px;}
+    .hero{padding:44px 0 34px;}
+    .sample-doc{padding:26px 22px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="logo">Cottage<span>Margin</span></div>
+    <a href="app.html">Open the calculator</a>
+  </div>
+</header>
+
+<div class="hero wrap">
+  <h1>Stop underpricing your baking.</h1>
+  <p>CottageMargin is a recipe costing and profit-protection tool for bakers who sell: cottage bakers
+     supplying cafés, weekly farmers-market vendors, and micro-bakeries running 10–30 products and
+     buying ingredients in bulk. Enter what you actually pay, add the packaging, oven energy, your own
+     labor, the waste, and the items that come home unsold — then price every bake to a real margin and
+     hand buyers a clean, professional price sheet. If you bake for fun, this isn't for you — a notebook
+     is honestly enough. If baking is income, your prices need real numbers behind them.</p>
+  <div class="cta-row">
+    <a class="btn btn-primary" href="https://buy.stripe.com/14A5kE63Ng5q7iY9K00oM0x">Subscribe — $12/month founding price</a>
+    <a class="btn btn-outline" href="app.html">Try the calculator free</a>
+  </div>
+  <p class="price-note">The calculator, a watermarked price-sheet preview, and your first 3 saved recipes are free. Pro unlocks clean PDFs, unlimited recipes, and the Price Impact Monitor.</p>
+</div>
+
+<section class="wrap">
+  <h2>How it works</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="num">1</div>
+      <h3>Build your ingredient library</h3>
+      <p>Enter each ingredient once — the bag, box, or bottle you buy and what you paid. CottageMargin works out your true cost per gram, per cup, or per egg, across weights, volumes, and counts, using each ingredient's own grams-per-cup weight.</p>
+    </div>
+    <div class="step">
+      <div class="num">2</div>
+      <h3>Cost the whole recipe</h3>
+      <p>Ingredients are only part of it. Add packaging, oven energy, booth and delivery costs, your labor, a waste allowance, and your expected sell-through — then see the true cost of the batch and of every item you actually sell.</p>
+    </div>
+    <div class="step">
+      <div class="num">3</div>
+      <h3>Price it &amp; share the right sheet</h3>
+      <p>Pick your target margin and get a selling price that still hits it after card fees. Send cafés a wholesale sheet and markets a retail sheet — each shows only its own prices, never your costs.</p>
+    </div>
+  </div>
+</section>
+
+<section class="wrap">
+  <h2>What you get</h2>
+  <div class="features">
+    <div class="feature">
+      <span class="tag tag-free">FREE</span>
+      <h3>Full recipe cost calculator</h3>
+      <p>Every input, live numbers, batch scaling to any size, sell-through and payment-fee math, and plain-words warnings — thin margin, or a wholesale price that's quietly losing money — before you quote.</p>
+    </div>
+    <div class="feature">
+      <span class="tag tag-free">FREE</span>
+      <h3>Watermarked price-sheet preview</h3>
+      <p>See exactly how your retail or wholesale price sheet will look — your bakery name, the recipe, the ingredients, and the prices for that sheet — right on screen, free.</p>
+    </div>
+    <div class="feature">
+      <span class="tag tag-free">FREE</span>
+      <h3>Save your first 3 recipes</h3>
+      <p>Your first 3 saved recipes are free, with their costs locked in as snapshots. Pro makes the library unlimited and adds the dashboard, backups, and CSV export.</p>
+    </div>
+    <div class="feature">
+      <span class="tag tag-pro">PRO</span>
+      <h3>Professional PDF price sheets</h3>
+      <p>Your logo and contact info, the recipe with quantities scaled to the batch you're quoting, and your prices. Retail and wholesale are separate sheets — a café never sees your market prices, and your costs, labor rate, and margin never appear on either.</p>
+    </div>
+    <div class="feature">
+      <span class="tag tag-pro">PRO</span>
+      <h3>Ingredient Price Impact Monitor</h3>
+      <p>Butter jumps 25% at the store? Update it once in your library and the monitor lists every saved recipe it touches: your margin at today's price, the damage, and the new price that restores your target. Nothing reprices until you approve it, recipe by recipe.</p>
+    </div>
+    <div class="feature">
+      <span class="tag tag-pro">PRO</span>
+      <h3>Wholesale guard</h3>
+      <p>Set a minimum wholesale margin and CottageMargin shows your profit per item at your wholesale price — and warns you in plain words when a café discount dips below your cost per item sold.</p>
+    </div>
+  </div>
+</section>
+
+<section class="wrap">
+  <h2>See a sample price sheet</h2>
+  <div class="sample-doc">
+    <div class="co">Sunrise Home Bakery</div>
+    <div class="contact">(555) 014-2287 · hello@sunrisehomebakery.example</div>
+    <div class="rule"></div>
+    <h3>Price Sheet</h3>
+    <div class="date">Recipe: <strong>Vanilla Bean Cupcakes</strong> · Date: November 23, 2026</div>
+
+    <h4>Makes</h4>
+    <p>12 cupcakes</p>
+
+    <h4>Ingredients</h4>
+    <ul>
+      <li>All-purpose flour — 240 g</li>
+      <li>Granulated sugar — 200 g</li>
+      <li>Unsalted butter — 170 g</li>
+      <li>Eggs — 3 each</li>
+      <li>Vanilla extract — 10 ml</li>
+      <li>Whole milk — 120 ml</li>
+    </ul>
+
+    <h4>Prices</h4>
+    <p class="invest">Price per cupcake: <b>$3.51</b></p>
+    <div class="kv"><b>Full batch (12 cupcakes)</b><span>$42.12</span></div>
+  </div>
+  <p class="sample-cap">This is the retail sheet. Sunrise also sends cafés a separate wholesale sheet for the same recipe —
+     wholesale price $2.81 per cupcake, with no retail prices anywhere on it.</p>
+  <div class="private-box">
+    <h4>What the baker sees privately (never on the sheet)</h4>
+    <div class="kv"><b>True cost of this batch</b><span>$21.07 — ingredients, packaging, 45 minutes of labor, and 5% waste included</span></div>
+    <div class="kv"><b>Cost per cupcake</b><span>$1.76</span></div>
+    <div class="kv"><b>Price at a 50% margin</b><span>$3.51</span></div>
+    <div class="kv"><b>Profit per batch at that price</b><span>$21.05</span></div>
+  </div>
+  <p class="sample-cap">Sample — Sunrise Home Bakery is fictional. Your sheets carry your logo, your recipes, and your prices.</p>
+</section>
+
+<section class="wrap">
+  <h2>Simple pricing</h2>
+  <div class="pricing">
+    <div class="badge">FOUNDING MEMBERS</div>
+    <div class="amount">$12</div>
+    <div class="per">per month</div>
+    <p class="founding"><strong>$12/month founding-member pricing</strong> — locked in while your subscription stays active.</p>
+    <ul>
+      <li>Full calculator + watermarked preview — free forever</li>
+      <li>Your first 3 saved recipes — free</li>
+      <li>Clean, branded retail &amp; wholesale PDF price sheets</li>
+      <li>Unlimited saved recipes + recipe dashboard</li>
+      <li>Ingredient Price Impact Monitor</li>
+      <li>Backup export / restore + CSV export</li>
+      <li>Works on phone, tablet, and computer</li>
+      <li>Cancel anytime</li>
+    </ul>
+    <a class="btn btn-primary" href="https://buy.stripe.com/14A5kE63Ng5q7iY9K00oM0x">Subscribe — $12/month founding price</a>
+  </div>
+</section>
+
+<section class="wrap">
+  <div class="honest">
+    <strong>Straight talk:</strong> CottageMargin is a new tool from a small independent maker.
+    We don't post testimonials or customer counts we don't have. Try the calculator free —
+    if the numbers don't help you price better, don't subscribe.
+  </div>
+</section>
+
+<section class="wrap">
+  <h2>The fine print, in plain words</h2>
+  <div class="policies">
+    <div class="policy">
+      <h3>Privacy</h3>
+      <p>Your recipes, your ingredient prices, and your bakery info are stored only in your own browser
+         on your own device. Nothing you type into the calculator is uploaded to us or anyone else — there
+         is no account and no tracking of your numbers. Export a backup file from the app regularly,
+         because clearing your browser data erases what's saved here.</p>
+    </div>
+    <div class="policy">
+      <h3>Billing &amp; cancellation</h3>
+      <p>Subscriptions are billed monthly through Stripe. You can cancel anytime from your Stripe
+         receipt or the Stripe customer portal — no email to us required, no cancellation fee.
+         When you cancel, Pro stays active until the end of the period you already paid for, and the
+         free calculator keeps working either way.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    CottageMargin · Questions? Email <a href="mailto:chrisla122787@gmail.com">chrisla122787@gmail.com</a>
+  </div>
+</footer>
+
+</body>
+</html>

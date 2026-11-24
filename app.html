@@ -1,0 +1,1673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CottageMargin — Recipe Cost Calculator</title>
+<style>
+  :root{
+    --ink:#3a2a1e; --muted:#7d6a58; --brand:#a85b23; --brand-dark:#7c3f14;
+    --bg:#faf5ec; --card:#ffffff; --line:#e6d9c6; --accent:#f5e9d6;
+    --warn-bg:#fdf0e6; --warn-ink:#8a4b12; --warn-line:#f0c491;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+       background:var(--bg); color:var(--ink); line-height:1.5;}
+  .wrap{max-width:1020px; margin:0 auto; padding:0 20px 48px;}
+  header{background:var(--ink); color:#fff; margin-bottom:28px;}
+  header .inner{max-width:1020px; margin:0 auto; padding:16px 20px; display:flex;
+                align-items:center; justify-content:space-between;}
+  .logo{font-size:22px; font-weight:800;}
+  .logo span{color:#e8a04c;}
+  header a{color:#fff; text-decoration:none; font-weight:600; font-size:15px;}
+  header a:hover{text-decoration:underline;}
+  h1{font-size:26px; margin-bottom:4px;}
+  .sub{color:var(--muted); margin-bottom:22px;}
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:22px;}
+  .card h2{font-size:18px; margin-bottom:16px;}
+  .card h2 .pro-tag{display:inline-block; background:var(--ink); color:#fff; font-size:11px;
+                    font-weight:800; letter-spacing:.4px; padding:2px 8px; border-radius:20px;
+                    vertical-align:middle; margin-left:8px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-size:14px; font-weight:600; margin-bottom:5px;}
+  .field .hint{font-weight:400; color:var(--muted); font-size:12.5px;}
+  .field input[type=text], .field input[type=number], .field input[type=email], .field input[type=tel],
+  .field select{
+    width:100%; padding:10px 12px; font-size:16px; border:1px solid var(--line);
+    border-radius:7px; background:#fff; color:var(--ink);}
+  .field input:focus, .field select:focus{outline:2px solid var(--brand); outline-offset:0; border-color:var(--brand);}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .result-row{display:flex; justify-content:space-between; align-items:baseline;
+              padding:9px 0; border-bottom:1px solid var(--line); font-size:15.5px;}
+  .result-row:last-of-type{border-bottom:none;}
+  .result-row .lbl{color:var(--muted);}
+  .result-row .val{font-weight:700; font-variant-numeric:tabular-nums;}
+  .result-row.big{padding:14px 0;}
+  .result-row.big .lbl{color:var(--ink); font-weight:700; font-size:17px;}
+  .result-row.big .val{font-size:26px; color:var(--brand-dark);}
+  .result-row.profit .val{color:var(--brand-dark);}
+  .warning{display:none; background:var(--warn-bg); border:1px solid var(--warn-line);
+           color:var(--warn-ink); border-radius:8px; padding:12px 14px; font-size:14.5px; margin-top:14px;}
+  .btn{display:inline-block; padding:12px 22px; border-radius:8px; font-size:16px; font-weight:700;
+       border:2px solid transparent; cursor:pointer; text-decoration:none; text-align:center;}
+  .btn-primary{background:var(--brand); color:#fff; width:100%;}
+  .btn-primary:hover{background:var(--brand-dark);}
+  .btn-ghost{background:#fff; color:var(--brand-dark); border-color:var(--brand);}
+  .btn-ghost:hover{background:var(--accent);}
+  .btn-small{padding:6px 12px; font-size:13.5px; border-radius:6px;}
+  .btn[disabled]{opacity:.45; cursor:not-allowed;}
+  .save-row{display:flex; gap:10px; margin-top:6px; flex-wrap:wrap;}
+  .save-row input{flex:1; min-width:160px; padding:10px 12px; font-size:15px; border:1px solid var(--line); border-radius:7px;}
+  .saved-list{margin-top:14px;}
+  .saved-item{display:flex; align-items:center; gap:8px; padding:9px 0; border-bottom:1px solid var(--line); flex-wrap:wrap;}
+  .saved-item:last-child{border-bottom:none;}
+  .saved-item .name{flex:1; min-width:120px; font-weight:600; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .saved-item .amt{font-weight:700; font-size:14.5px; font-variant-numeric:tabular-nums;}
+  .saved-item .date{color:var(--muted); font-size:12.5px;}
+  .empty-note{color:var(--muted); font-size:14.5px;}
+  .stack{display:grid; gap:20px;}
+  .fineprint{color:var(--muted); font-size:13px; margin-top:12px;}
+  .data-note{background:var(--warn-bg); border:1px solid var(--warn-line); color:var(--warn-ink);
+             border-radius:8px; padding:12px 14px; font-size:14.5px;}
+  .data-row{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;}
+  /* Ingredient library + recipe lines */
+  .lib-item{display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--line); flex-wrap:wrap;}
+  .lib-item:last-child{border-bottom:none;}
+  .lib-item .name{font-weight:600; font-size:15px;}
+  .lib-item .detail{color:var(--muted); font-size:13px; flex:1; min-width:150px;}
+  .line-row{display:grid; grid-template-columns:1fr; gap:8px; padding:12px; border:1px solid var(--line);
+            border-radius:8px; margin-bottom:10px; background:#fffdf9;}
+  .line-row .lr-top{display:grid; grid-template-columns:1fr auto; gap:8px;}
+  .line-row .lr-mid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;}
+  .line-row select, .line-row input{width:100%; padding:9px 10px; font-size:15px; border:1px solid var(--line);
+            border-radius:7px; background:#fff; color:var(--ink);}
+  .line-row .lr-cost{display:flex; justify-content:space-between; align-items:center; font-size:14.5px;}
+  .line-row .lr-cost .val{font-weight:700; font-variant-numeric:tabular-nums;}
+  .line-row label{font-size:12.5px; font-weight:600; color:var(--muted); display:block; margin-bottom:3px;}
+  .scaled-list{margin:6px 0 0 18px; font-size:14.5px;}
+  .scaled-list li{padding:2px 0;}
+  /* Impact monitor */
+  .impact-item{padding:12px 0; border-bottom:1px solid var(--line);}
+  .impact-item:last-child{border-bottom:none;}
+  .impact-item .txt{font-size:14.5px; margin-bottom:8px;}
+  /* Watermarked preview */
+  .preview-doc{position:relative; overflow:hidden; background:#fff; border:1px solid var(--line);
+               border-radius:6px; padding:28px 30px; margin-top:6px;}
+  .preview-doc .wm{position:absolute; inset:-40%; display:flex; flex-wrap:wrap; align-content:center;
+                   justify-content:center; gap:34px 44px; transform:rotate(-28deg);
+                   pointer-events:none; z-index:2;}
+  .preview-doc .wm span{font-size:25px; font-weight:800; letter-spacing:1px; color:var(--ink); opacity:.07; white-space:nowrap;}
+  .preview-doc .inner{position:relative; z-index:1;}
+  .preview-doc .co{font-size:19px; font-weight:800;}
+  .preview-doc .contact{color:var(--muted); font-size:12.5px;}
+  .preview-doc .rule{height:3px; background:var(--brand); border-radius:2px; margin:8px 0 14px;}
+  .preview-doc h3{font-size:15.5px; margin-bottom:2px;}
+  .preview-doc .pdate{color:var(--muted); font-size:12.5px; margin-bottom:12px;}
+  .preview-doc h4{font-size:13.5px; margin:13px 0 5px;}
+  .preview-doc p, .preview-doc li{font-size:13.5px;}
+  .preview-doc ul{margin:0 0 4px 18px;}
+  .preview-doc .invest b{color:var(--brand-dark); font-size:16.5px;}
+  @media (max-width:820px){ .grid{grid-template-columns:1fr;} .row2{grid-template-columns:1fr;} .line-row .lr-mid{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="inner">
+    <div class="logo">Cottage<span>Margin</span></div>
+    <a href="index.html">← Back to home</a>
+  </div>
+</header>
+
+<div class="wrap">
+  <h1>Recipe cost calculator</h1>
+  <p class="sub">Built for bakers who sell — cottage bakers supplying cafés, weekly market vendors, and micro-bakeries. Type your recipe and see your true batch cost and selling price: ingredients, packaging, oven energy, your labor, waste, and the items you won't sell, all counted. The calculator and the watermarked preview below are free.</p>
+
+  <div class="grid">
+    <!-- LEFT: inputs -->
+    <div class="stack">
+      <div class="card">
+        <h2>Your bakery</h2>
+        <div class="field">
+          <label for="bakeryName">Bakery name <span class="hint">— printed on the price sheet</span></label>
+          <input type="text" id="bakeryName" placeholder="e.g. Sunrise Home Bakery" autocomplete="off">
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="bakeryPhone">Phone <span class="hint">— optional</span></label>
+            <input type="tel" id="bakeryPhone" placeholder="e.g. (916) 555-0142" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="bakeryEmail">Email <span class="hint">— optional</span></label>
+            <input type="email" id="bakeryEmail" placeholder="e.g. hello@yourbakery.com" autocomplete="off">
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label for="logoInput">Bakery logo <span class="hint">— PNG or JPG, shown on the Pro PDF</span></label>
+          <input type="file" id="logoInput" accept="image/png,image/jpeg">
+          <p class="fineprint" id="logoStatus">No logo uploaded.</p>
+          <button class="btn btn-ghost btn-small" id="removeLogoBtn" type="button" style="display:none;">Remove logo</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Ingredient library</h2>
+        <p class="fineprint" style="margin:0 0 12px;">Enter each ingredient once, the way you buy it. CottageMargin works out your cost per gram, per ml, or per piece. Sample ingredients are pre-loaded so you can see how it works — edit or delete any of them.</p>
+        <div id="libraryList"></div>
+        <p class="empty-note" id="libraryEmpty" style="display:none;">No ingredients yet. Add your first one below.</p>
+        <h3 id="ingFormTitle" style="font-size:15.5px; margin:18px 0 10px;">Add an ingredient</h3>
+        <div class="field">
+          <label for="ingName">Ingredient name</label>
+          <input type="text" id="ingName" placeholder="e.g. Bread flour" autocomplete="off">
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="ingQty">You buy this much</label>
+            <input type="number" id="ingQty" min="0" step="any" placeholder="e.g. 25">
+          </div>
+          <div class="field">
+            <label for="ingUnit">Purchase unit</label>
+            <select id="ingUnit">
+              <option value="g">g</option>
+              <option value="kg">kg</option>
+              <option value="oz">oz</option>
+              <option value="lb">lb</option>
+              <option value="ml">ml</option>
+              <option value="L">L</option>
+              <option value="tsp">tsp</option>
+              <option value="tbsp">tbsp</option>
+              <option value="cup">cup</option>
+              <option value="each">each</option>
+              <option value="dozen">dozen</option>
+            </select>
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="ingPrice">Price you pay ($)</label>
+            <input type="number" id="ingPrice" min="0" step="any" placeholder="e.g. 18.50">
+          </div>
+          <div class="field">
+            <label for="ingGPerCup">Grams per cup <span class="hint">— this ingredient's own weight for one cup, used when a recipe mixes cups and grams. Defaults: flour 120, sugar 200, butter 227, cocoa 100, honey 340</span></label>
+            <input type="number" id="ingGPerCup" min="0" step="any" value="120">
+          </div>
+        </div>
+        <div class="save-row">
+          <button class="btn btn-ghost" id="ingSaveBtn" type="button">Save ingredient</button>
+          <button class="btn btn-ghost" id="ingCancelBtn" type="button" style="display:none;">Cancel edit</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>The recipe</h2>
+        <div class="field">
+          <label for="recipeName">Recipe name</label>
+          <input type="text" id="recipeName" value="Vanilla Bean Cupcakes" autocomplete="off">
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="yieldCount">Batch makes</label>
+            <input type="number" id="yieldCount" min="0" step="any" value="12">
+          </div>
+          <div class="field">
+            <label for="yieldUnit">Items <span class="hint">— e.g. cupcakes, loaves, cookies</span></label>
+            <input type="text" id="yieldUnit" value="cupcakes" autocomplete="off">
+          </div>
+        </div>
+
+        <h3 style="font-size:15.5px; margin:16px 0 6px;">Ingredients in this recipe</h3>
+        <p class="fineprint" style="margin:0 0 12px;">Each line keeps the ingredient price from the moment you picked it, so a recipe you costed last month doesn't silently change when store prices move. Re-pick the ingredient in a line to use its current library price — or let the Price Impact Monitor (Pro) flag it and approve the update there.</p>
+        <div id="linesList"></div>
+        <button class="btn btn-ghost btn-small" id="addLineBtn" type="button">+ Add ingredient line</button>
+
+        <h3 style="font-size:15.5px; margin:20px 0 10px;">The costs bakers forget</h3>
+        <div class="row2">
+          <div class="field">
+            <label for="packagingCost">Packaging per batch ($)</label>
+            <input type="number" id="packagingCost" min="0" step="any" value="2.40">
+          </div>
+          <div class="field">
+            <label for="otherCost">Other cost per batch ($)</label>
+            <input type="number" id="otherCost" min="0" step="any" value="0.60">
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="energyCost">Oven energy per batch ($)</label>
+            <input type="number" id="energyCost" min="0" step="any" value="0">
+          </div>
+          <div class="field">
+            <label for="boothCost">Market booth per batch ($)</label>
+            <input type="number" id="boothCost" min="0" step="any" value="0">
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="deliveryCost">Delivery per batch ($)</label>
+            <input type="number" id="deliveryCost" min="0" step="any" value="0">
+          </div>
+          <div class="field">
+            <label for="sellThroughPct">Expected sell-through (%) <span class="hint">— the share of the batch you actually sell. At 90%, the items that come home unsold are paid for by the ones that sold.</span></label>
+            <input type="number" id="sellThroughPct" min="0" step="any" value="100">
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="laborMinutes">Your labor (minutes)</label>
+            <input type="number" id="laborMinutes" min="0" step="any" value="45">
+          </div>
+          <div class="field">
+            <label for="laborRate">Your labor rate ($/hour)</label>
+            <input type="number" id="laborRate" min="0" step="any" value="18">
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="wastePct">Waste / spoilage (%) <span class="hint">— applied to ingredient cost only</span></label>
+            <input type="number" id="wastePct" min="0" step="any" value="5">
+          </div>
+          <div class="field">
+            <label for="targetMarginPct">Target profit margin (%)</label>
+            <input type="number" id="targetMarginPct" min="0" step="any" value="50">
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="feePct">Payment fee (%) <span class="hint">— card / platform fee on each sale, e.g. 2.9. Your suggested price covers it.</span></label>
+            <input type="number" id="feePct" min="0" step="any" value="0">
+          </div>
+          <div class="field">
+            <label for="feeFixed">Payment fee per item ($) <span class="hint">— the fixed part of the fee, e.g. 0.30</span></label>
+            <input type="number" id="feeFixed" min="0" step="any" value="0">
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="wholesaleDiscountPct">Wholesale discount (%) <span class="hint">— optional; % off your retail price for cafés and shops. Leave 0 for no wholesale price.</span></label>
+            <input type="number" id="wholesaleDiscountPct" min="0" step="any" value="20">
+          </div>
+          <div class="field">
+            <label for="minWholesaleMarginPct">Minimum wholesale margin (%) <span class="hint">— the guard below shows the lowest wholesale price that still keeps this margin</span></label>
+            <input type="number" id="minWholesaleMarginPct" min="0" step="any" value="20">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Batch scaling</h2>
+        <div class="row2">
+          <div class="field">
+            <label for="scaleMode">Scale by</label>
+            <select id="scaleMode">
+              <option value="multiplier" selected>Multiplier (×)</option>
+              <option value="target">Target item count</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="scaleValue">Amount <span class="hint">— e.g. 2.5, or 30 items</span></label>
+            <input type="number" id="scaleValue" min="0" step="any" value="1">
+          </div>
+        </div>
+        <p class="fineprint" style="margin-bottom:0;">Scaling is linear: every quantity and cost multiplies by the same factor, so cost per item stays the same. Shown quantities are rounded for the kitchen — weights to whole grams, volumes and counts to the nearest quarter — but costs are always figured from the exact amounts.</p>
+      </div>
+    </div>
+
+    <!-- RIGHT: results + preview + pro -->
+    <div class="stack">
+      <div class="card">
+        <h2>Your numbers <span class="hint" style="font-weight:400; color:var(--muted); font-size:13px;">— private, never shown to buyers</span></h2>
+        <div class="result-row"><span class="lbl">Ingredient cost</span><span class="val" id="rIngSubtotal">$0.00</span></div>
+        <div class="result-row"><span class="lbl">Waste allowance</span><span class="val" id="rWasteAmt">$0.00</span></div>
+        <div class="result-row"><span class="lbl">Packaging</span><span class="val" id="rPackagingOut">$0.00</span></div>
+        <div class="result-row"><span class="lbl">Your labor</span><span class="val" id="rLaborCost">$0.00</span></div>
+        <div class="result-row"><span class="lbl">Other cost</span><span class="val" id="rOtherOut">$0.00</span></div>
+        <div class="result-row"><span class="lbl">Oven energy</span><span class="val" id="rEnergyOut">$0.00</span></div>
+        <div class="result-row"><span class="lbl">Market booth</span><span class="val" id="rBoothOut">$0.00</span></div>
+        <div class="result-row"><span class="lbl">Delivery</span><span class="val" id="rDeliveryOut">$0.00</span></div>
+        <div class="result-row big"><span class="lbl">True batch cost</span><span class="val" id="rBatchCost">$0.00</span></div>
+        <div class="result-row"><span class="lbl">Cost per item made</span><span class="val" id="rCostPerItem">$0.00</span></div>
+        <div class="result-row"><span class="lbl">Cost per item sold</span><span class="val" id="rCostPerSold">$0.00</span></div>
+        <div class="result-row" id="rPlainRow" style="display:none;"><span class="lbl">Price per item before payment fees</span><span class="val" id="rRetailPlain">$0.00</span></div>
+        <div class="result-row big"><span class="lbl">Selling price per item</span><span class="val" id="rRetailItem">$0.00</span></div>
+        <div class="result-row"><span class="lbl">Selling price, full batch</span><span class="val" id="rRetailBatch">$0.00</span></div>
+        <div class="result-row"><span class="lbl">Wholesale price per item</span><span class="val" id="rWholesaleItem">—</span></div>
+        <div class="result-row"><span class="lbl">Wholesale profit per item</span><span class="val" id="rWholesaleProfit">—</span></div>
+        <div class="result-row"><span class="lbl">Wholesale margin at that price</span><span class="val" id="rWholesaleMargin">—</span></div>
+        <div class="result-row"><span class="lbl">Lowest wholesale price at your minimum margin</span><span class="val" id="rMinWholesale">—</span></div>
+        <div class="result-row profit"><span class="lbl">Profit per item sold at this price</span><span class="val" id="rProfitItem">$0.00</span></div>
+        <div class="result-row profit"><span class="lbl">Profit per batch at this price</span><span class="val" id="rProfitBatch">$0.00</span></div>
+        <div class="result-row"><span class="lbl">True margin at this price</span><span class="val" id="rTrueMargin">—</span></div>
+
+        <h3 style="font-size:15px; margin:18px 0 6px;">Price per item at other margins</h3>
+        <div class="result-row"><span class="lbl">30% margin</span><span class="val" id="pt30">—</span></div>
+        <div class="result-row"><span class="lbl">40% margin</span><span class="val" id="pt40">—</span></div>
+        <div class="result-row"><span class="lbl">50% margin</span><span class="val" id="pt50">—</span></div>
+        <div class="result-row"><span class="lbl">60% margin</span><span class="val" id="pt60">—</span></div>
+
+        <h3 style="font-size:15px; margin:18px 0 6px;">Scaled batch</h3>
+        <div class="result-row"><span class="lbl">Scaled batch makes</span><span class="val" id="rScaledYield">—</span></div>
+        <div class="result-row"><span class="lbl">Scaled batch cost</span><span class="val" id="rScaledBatchCost">—</span></div>
+        <ul class="scaled-list" id="scaledList"></ul>
+
+        <div class="warning" id="marginWarning">
+          <strong>Careful:</strong> a margin under 20% is very thin for baked goods. One price rise at the store,
+          one spoiled tray, or one slow market day can turn this recipe into a loss. Once your labor is counted,
+          many selling bakers aim for 50% or more.
+        </div>
+        <div class="warning" id="marginError">
+          <strong>That margin won't work:</strong> a margin of 100% or more can't be priced. Set your target margin below 100% — 40–60% is typical for baked goods.
+        </div>
+        <div class="warning" id="feeError">
+          <strong>Those numbers can't work together:</strong> your target margin plus the payment-fee percentage adds up to 100% or more,
+          so no price can deliver that margin after fees. Lower the target margin or the fee percentage.
+        </div>
+        <div class="warning" id="unitWarning">
+          <strong>Unit mismatch:</strong> one or more ingredient lines use a unit that can't be converted for that ingredient
+          (for example, grams for something bought by the count). Those lines are counted as $0 until the unit is fixed.
+        </div>
+        <div class="warning" id="wholesaleWarning">
+          <strong>Wholesale warning:</strong> at this wholesale price you make nothing — or lose money — on every item sold,
+          once your cost per item sold (and payment fees, if set) are counted. Raise the wholesale price, lower the discount,
+          or check the lowest wholesale price shown above.
+        </div>
+
+        <div class="field" style="margin-top:20px;">
+          <label for="pdfMode">Price sheet type</label>
+          <select id="pdfMode">
+            <option value="retail" selected>Retail price sheet</option>
+            <option value="wholesale">Wholesale price sheet</option>
+          </select>
+        </div>
+        <div>
+          <button class="btn btn-primary" id="pdfBtn" type="button">Download clean PDF price sheet</button>
+          <p class="fineprint" id="pdfNote">Pro feature — the clean PDF carries your logo and no watermark. The free preview below shows exactly what buyers get.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Price sheet preview <span class="hint" style="font-weight:400; color:var(--muted); font-size:13px;">— free, watermarked</span></h2>
+        <div class="preview-doc" id="previewDoc">
+          <div class="wm" aria-hidden="true">
+            <span>PREVIEW — CottageMargin</span><span>PREVIEW — CottageMargin</span><span>PREVIEW — CottageMargin</span>
+            <span>PREVIEW — CottageMargin</span><span>PREVIEW — CottageMargin</span><span>PREVIEW — CottageMargin</span>
+            <span>PREVIEW — CottageMargin</span><span>PREVIEW — CottageMargin</span><span>PREVIEW — CottageMargin</span>
+            <span>PREVIEW — CottageMargin</span><span>PREVIEW — CottageMargin</span><span>PREVIEW — CottageMargin</span>
+          </div>
+          <div class="inner">
+            <div class="co" id="pvBakery">Your Bakery</div>
+            <div class="contact" id="pvContact"></div>
+            <div class="rule"></div>
+            <h3 id="pvSheetTitle">Price Sheet</h3>
+            <div class="pdate">Recipe: <strong id="pvRecipe">Your Recipe</strong> · <span id="pvDate"></span></div>
+            <h4>Makes</h4>
+            <p id="pvYield">—</p>
+            <h4>Ingredients</h4>
+            <ul id="pvIngredients"></ul>
+            <h4>Prices</h4>
+            <div id="pvRetailBlock">
+              <p class="invest">Price per item: <b id="pvPriceItem">—</b></p>
+              <p>Full batch: <span id="pvPriceBatch">—</span></p>
+            </div>
+            <div id="pvWholesaleBlock" style="display:none;">
+              <p class="invest">Wholesale price per item: <b id="pvPriceWholesale">—</b></p>
+              <p>Full batch: <span id="pvPriceWholesaleBatch">—</span></p>
+            </div>
+          </div>
+        </div>
+        <p class="fineprint">This is what buyers see — ingredients and prices only, and only the prices for the sheet type you picked. Your ingredient costs, labor rate, waste, and margin never appear here or on the PDF.</p>
+      </div>
+
+      <!-- PRO GATE (shown when Pro is locked) -->
+      <div class="card" id="proGate">
+        <h2>CottageMargin Pro <span class="pro-tag">PRO</span></h2>
+        <p style="font-size:15px; margin-bottom:6px;">Unlock unlimited clean PDF price sheets, unlimited saved recipes, the Ingredient Price Impact Monitor, and backup export.</p>
+        <p style="font-size:15px; margin-bottom:16px;"><strong>$12/month founding-member pricing</strong> — locked in while your subscription stays active.</p>
+        <a class="btn btn-primary" id="subscribeBtn" href="https://buy.stripe.com/14A5kE63Ng5q7iY9K00oM0x" style="margin-bottom:12px;">Subscribe — $12/month</a>
+        <button class="btn btn-ghost" id="unlockBtn" type="button" style="width:100%;">I already subscribed — unlock Pro</button>
+        <p class="fineprint">Launch note: during our opening validation, unlocking is on the honor system — please subscribe first; the button simply turns Pro on for this browser on this device.</p>
+      </div>
+
+      <!-- PRO AREA (shown when Pro is unlocked) -->
+      <div id="proArea" style="display:none;">
+        <div class="stack">
+          <div class="card">
+            <h2>Ingredient Price Impact Monitor <span class="pro-tag">PRO</span></h2>
+            <p class="fineprint" style="margin:0 0 6px;">When an ingredient's price changes in your library, the monitor shows every saved recipe it touches — what the change does to your margin at the price you're charging now, and the price that would restore your target margin. Nothing changes until you approve it, recipe by recipe.</p>
+            <div id="monitorList"></div>
+            <p class="empty-note" id="monitorEmpty">No saved recipe is affected by a library price change right now. When a store price moves and you update it in your library, the impact shows up here.</p>
+          </div>
+
+          <div class="card">
+            <h2>Your data <span class="pro-tag">PRO</span></h2>
+            <div class="data-note"><strong>Your data is stored only in this browser on this device</strong> — export a backup regularly. Clearing browser data erases saved recipes.</div>
+            <div class="data-row">
+              <button class="btn btn-ghost btn-small" id="exportBackupBtn" type="button">Export backup (JSON)</button>
+              <button class="btn btn-ghost btn-small" id="exportCsvBtn" type="button">Export recipes (CSV)</button>
+              <label class="btn btn-ghost btn-small" for="importInput" style="cursor:pointer;">Import backup…</label>
+              <input type="file" id="importInput" accept="application/json,.json" style="display:none;">
+            </div>
+            <div class="data-row">
+              <button class="btn btn-ghost btn-small" id="lockBtn" type="button">Lock Pro on this device</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RECIPE LIBRARY (always visible; free plan saves up to 3) -->
+      <div class="card">
+        <h2>Recipe library</h2>
+        <div class="result-row"><span class="lbl">Saved recipes</span><span class="val" id="totRecipes">0</span></div>
+        <div class="result-row"><span class="lbl">Estimated recipe margin (at your set prices)</span><span class="val" id="totAvgMargin">—</span></div>
+        <p class="fineprint" id="freeLimitNote"></p>
+        <div class="save-row">
+          <input type="text" id="recipeSaveName" placeholder="Name this recipe, e.g. Vanilla Bean Cupcakes" autocomplete="off">
+          <button class="btn btn-ghost" id="saveRecipeBtn" type="button">Save recipe</button>
+        </div>
+        <div class="saved-list" id="savedList"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  var STRIPE_URL = "https://buy.stripe.com/14A5kE63Ng5q7iY9K00oM0x";
+
+  // ---- Unit system ----
+  // Base units: weight -> grams, volume -> ml, count -> each.
+  // 1 lb = 453.592 g (so 1 oz = 28.3495 g). 1 cup = 236.588 ml,
+  // 1 tbsp = 14.7868 ml, 1 tsp = 4.92892 ml. 1 dozen = 12 each.
+  // Weight <-> volume conversions go through the ingredient's OWN
+  // grams-per-cup value (each ingredient carries one; flour convention
+  // 120 g per cup is only the fallback when none is set).
+  var ML_PER_CUP = 236.588;
+  var DEFAULT_G_PER_CUP = 120;
+  var UNITS = {
+    "g":     {family:"weight", toBase:1,       label:"g"},
+    "kg":    {family:"weight", toBase:1000,    label:"kg"},
+    "oz":    {family:"weight", toBase:28.3495, label:"oz"},
+    "lb":    {family:"weight", toBase:453.592, label:"lb"},
+    "ml":    {family:"volume", toBase:1,       label:"ml"},
+    "L":     {family:"volume", toBase:1000,    label:"L"},
+    "tsp":   {family:"volume", toBase:4.92892, label:"tsp"},
+    "tbsp":  {family:"volume", toBase:14.7868, label:"tbsp"},
+    "cup":   {family:"volume", toBase:236.588, label:"cup"},
+    "each":  {family:"count",  toBase:1,       label:"each"},
+    "dozen": {family:"count",  toBase:12,      label:"dozen"}
+  };
+  var UNIT_LIST = ["g","kg","oz","lb","ml","L","tsp","tbsp","cup","each","dozen"];
+  var BASE_LABEL = {weight:"g", volume:"ml", count:"each"};
+
+  var RECIPES_KEY     = "cottagemargin.recipes.v1";
+  var INGREDIENTS_KEY = "cottagemargin.ingredients.v1";
+  var SETTINGS_KEY    = "cottagemargin.settings.v1";
+  var PRO_KEY         = "cottagemargin.pro.v1";
+  var FREEPDF_KEY     = "cottagemargin.freepdf.v1";
+
+  var FREE_RECIPE_LIMIT = 3;
+
+  var BAKERY_FIELDS = ["bakeryName","bakeryPhone","bakeryEmail"];
+  var SCALARS = ["recipeName","yieldCount","yieldUnit","packagingCost","laborMinutes",
+                 "laborRate","wastePct","otherCost","energyCost","boothCost","deliveryCost",
+                 "sellThroughPct","feePct","feeFixed","targetMarginPct","wholesaleDiscountPct",
+                 "minWholesaleMarginPct","scaleValue"];
+  var NUMERIC = ["yieldCount","packagingCost","laborMinutes","laborRate","wastePct",
+                 "otherCost","energyCost","boothCost","deliveryCost","sellThroughPct",
+                 "feePct","feeFixed","targetMarginPct","wholesaleDiscountPct",
+                 "minWholesaleMarginPct","scaleValue"];
+
+  var SAMPLE_INGREDIENTS = [
+    {id:"ing-flour",   name:"All-purpose flour", purchaseQty:10,  purchaseUnit:"lb",    purchasePrice:6.40, gPerCup:120},
+    {id:"ing-sugar",   name:"Granulated sugar",  purchaseQty:4,   purchaseUnit:"lb",    purchasePrice:3.84, gPerCup:200},
+    {id:"ing-butter",  name:"Unsalted butter",   purchaseQty:1,   purchaseUnit:"lb",    purchasePrice:4.48, gPerCup:227},
+    {id:"ing-eggs",    name:"Eggs",              purchaseQty:1,   purchaseUnit:"dozen", purchasePrice:3.60, gPerCup:120},
+    {id:"ing-vanilla", name:"Vanilla extract",   purchaseQty:100, purchaseUnit:"ml",    purchasePrice:8.30, gPerCup:120},
+    {id:"ing-milk",    name:"Whole milk",        purchaseQty:1,   purchaseUnit:"L",     purchasePrice:1.55, gPerCup:245}
+  ];
+
+  function $(id){ return document.getElementById(id); }
+
+  function num(id){
+    var v = parseFloat($(id).value);
+    return (isNaN(v) || v < 0) ? 0 : v;
+  }
+  function round2(v){ return Math.round(v * 100) / 100; }
+  function usd(v){
+    return "$" + v.toLocaleString("en-US",{minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+  function money(v){ return (isNaN(v) || v === null || v === undefined) ? "—" : usd(v); }
+  function fmtNum(v){
+    if(isNaN(v) || v === null || v === undefined){ return "—"; }
+    return String(Math.round(v * 100) / 100);
+  }
+  function roundQuarter(v){ return Math.round(v * 4) / 4; }
+  function pct1(v){ return isNaN(v) ? "—" : (v * 100).toFixed(1) + "%"; }
+
+  // ---- Conversions & costing engine (also documented in README.md) ----
+  function convertQty(qty, fromUnit, toFamily, gPerCup){
+    var u = UNITS[fromUnit];
+    if(!u){ return NaN; }
+    if(u.family === toFamily){ return qty * u.toBase; }
+    var gpc = (gPerCup && gPerCup > 0) ? gPerCup : DEFAULT_G_PER_CUP;
+    if(u.family === "volume" && toFamily === "weight"){
+      return (qty * u.toBase / ML_PER_CUP) * gpc;
+    }
+    if(u.family === "weight" && toFamily === "volume"){
+      return (qty * u.toBase / gpc) * ML_PER_CUP;
+    }
+    return NaN; // count <-> weight/volume cannot be converted
+  }
+
+  function ingredientBaseFamily(ing){ return UNITS[ing.purchaseUnit].family; }
+  function ingredientUnitCost(ing){
+    var base = (parseFloat(ing.purchaseQty) || 0) * UNITS[ing.purchaseUnit].toBase;
+    return base > 0 ? (parseFloat(ing.purchasePrice) || 0) / base : 0;
+  }
+  function snapshotLine(ing, qty, unit){
+    return {
+      source: "lib", ingredientId: ing.id, name: ing.name,
+      qty: qty, unit: unit, cost: 0,
+      baseFamily: ingredientBaseFamily(ing),
+      unitCostPerBase: ingredientUnitCost(ing),
+      gPerCup: (parseFloat(ing.gPerCup) > 0) ? parseFloat(ing.gPerCup) : DEFAULT_G_PER_CUP,
+      purchaseQty: parseFloat(ing.purchaseQty) || 0,
+      purchaseUnit: ing.purchaseUnit,
+      purchasePrice: parseFloat(ing.purchasePrice) || 0
+    };
+  }
+  function lineCost(line){
+    if(line.source === "oneoff"){ return parseFloat(line.cost) || 0; }
+    if(!line.ingredientId){ return 0; }
+    var baseQty = convertQty(parseFloat(line.qty) || 0, line.unit, line.baseFamily, line.gPerCup);
+    if(isNaN(baseQty)){ return NaN; }
+    return baseQty * (parseFloat(line.unitCostPerBase) || 0);
+  }
+
+  function calculateRecipe(inp){
+    var subtotal = 0, hasUnitIssue = false;
+    (inp.lines || []).forEach(function(line){
+      var c = lineCost(line);
+      if(isNaN(c)){ hasUnitIssue = true; } else { subtotal += c; }
+    });
+    // Newer cost fields default safely so older saved recipes (which
+    // predate them) still calculate exactly as they did before.
+    var energyCost   = parseFloat(inp.energyCost)   || 0;
+    var boothCost    = parseFloat(inp.boothCost)    || 0;
+    var deliveryCost = parseFloat(inp.deliveryCost) || 0;
+    var feePct       = parseFloat(inp.feePct)       || 0;
+    var feeFixed     = parseFloat(inp.feeFixed)     || 0;
+    var minWholesaleMarginPct = (inp.minWholesaleMarginPct === undefined || inp.minWholesaleMarginPct === null)
+                                  ? 20 : (parseFloat(inp.minWholesaleMarginPct) || 0);
+    var sellThroughPct = (inp.sellThroughPct === undefined || inp.sellThroughPct === null ||
+                          isNaN(parseFloat(inp.sellThroughPct)))
+                           ? 100 : parseFloat(inp.sellThroughPct);
+
+    var wasteAmount = subtotal * inp.wastePct / 100;
+    var ingTotal    = subtotal + wasteAmount;
+    var laborCost   = inp.laborMinutes / 60 * inp.laborRate;
+    var batchCost   = ingTotal + inp.packagingCost + laborCost + inp.otherCost +
+                      energyCost + boothCost + deliveryCost;
+    var costPerItem = inp.yieldCount > 0 ? batchCost / inp.yieldCount : NaN;
+    var soldCount   = inp.yieldCount * sellThroughPct / 100;
+    var costPerSold = soldCount > 0 ? batchCost / soldCount : NaN;
+
+    var marginFrac = inp.targetMarginPct / 100;
+    var feeFrac    = feePct / 100;
+    var feeError   = (marginFrac + feeFrac) >= 1;
+    var hasFees    = feeFrac > 0 || feeFixed > 0;
+
+    // Plain price ignores payment fees; the headline selling price is
+    // fee-inclusive: P = (C + F) / (1 - M - R), so the margin survives
+    // after the processor takes its cut.
+    var plainExact  = (!isNaN(costPerSold) && marginFrac < 1) ? costPerSold / (1 - marginFrac) : NaN;
+    var plainRetail = isNaN(plainExact) ? NaN : round2(plainExact);
+    var retailExact = (!isNaN(costPerSold) && !feeError) ? (costPerSold + feeFixed) / (1 - marginFrac - feeFrac) : NaN;
+    var retail      = isNaN(retailExact) ? NaN : round2(retailExact);
+
+    var profitPerItem  = !isNaN(retail) ? retail - retail * feeFrac - feeFixed - costPerSold : NaN;
+    var trueMargin     = (!isNaN(retail) && retail > 0 && !isNaN(profitPerItem)) ? profitPerItem / retail : NaN;
+    var profitPerBatch = !isNaN(profitPerItem) ? profitPerItem * soldCount : NaN;
+
+    var wholesale = (!isNaN(retail) && inp.wholesaleDiscountPct > 0)
+                      ? round2(retail * (1 - inp.wholesaleDiscountPct / 100)) : null;
+    var wholesaleProfit = (wholesale === null) ? null
+                      : wholesale - wholesale * feeFrac - feeFixed - costPerSold;
+    var wholesaleMargin = (wholesale === null || !(wholesale > 0) || wholesaleProfit === null || isNaN(wholesaleProfit))
+                      ? null : wholesaleProfit / wholesale;
+    var minMarginFrac = minWholesaleMarginPct / 100;
+    var minWholesale  = (!isNaN(costPerSold) && (minMarginFrac + feeFrac) < 1)
+                      ? round2((costPerSold + feeFixed) / (1 - minMarginFrac - feeFrac)) : NaN;
+    var wholesaleBelowCost = (wholesale !== null && wholesaleProfit !== null && !isNaN(wholesaleProfit) && wholesaleProfit <= 0);
+
+    var table = {};
+    [30,40,50,60].forEach(function(m){
+      var mf = m / 100;
+      table[m] = (isNaN(costPerSold) || (mf + feeFrac) >= 1)
+                   ? NaN : round2((costPerSold + feeFixed) / (1 - mf - feeFrac));
+    });
+    return {
+      subtotal: subtotal, wasteAmount: wasteAmount, ingTotal: ingTotal,
+      laborCost: laborCost, batchCost: batchCost, costPerItem: costPerItem,
+      soldCount: soldCount, costPerSold: costPerSold, sellThroughPct: sellThroughPct,
+      energyCost: energyCost, boothCost: boothCost, deliveryCost: deliveryCost,
+      feePct: feePct, feeFixed: feeFixed, hasFees: hasFees, feeError: feeError,
+      plainRetail: plainRetail, retail: retail, wholesale: wholesale,
+      wholesaleProfit: wholesaleProfit, wholesaleMargin: wholesaleMargin,
+      minWholesale: minWholesale, wholesaleBelowCost: wholesaleBelowCost,
+      trueMargin: trueMargin,
+      profitPerItem: profitPerItem, profitPerBatch: profitPerBatch,
+      table: table, hasUnitIssue: hasUnitIssue
+    };
+  }
+
+  function scaleFactorFor(inp){
+    if(inp.scaleMode === "target"){
+      return inp.yieldCount > 0 ? inp.scaleValue / inp.yieldCount : NaN;
+    }
+    return inp.scaleValue;
+  }
+  function scaledQtyDisplay(line, factor){
+    var raw = (parseFloat(line.qty) || 0) * factor;
+    var u = UNITS[line.unit];
+    if(!u || isNaN(raw)){ return "—"; }
+    if(u.family === "weight"){ return String(Math.round(raw * u.toBase)) + " g"; }
+    return fmtNum(roundQuarter(raw)) + " " + line.unit;
+  }
+  function scaledYield(inp, factor){
+    return isNaN(factor) ? NaN : inp.yieldCount * factor;
+  }
+  function yieldText(inp, factor){
+    var sy = scaledYield(inp, factor);
+    if(isNaN(sy)){ return "—"; }
+    var t = fmtNum(Math.round(sy * 10) / 10) + " " + (inp.yieldUnit || "items");
+    if(!isNaN(factor) && Math.abs(factor - 1) > 0.0001){
+      t += " (batch ×" + fmtNum(Math.round(factor * 100) / 100) + ")";
+    }
+    return t;
+  }
+
+  // ---- State ----
+  var ingredients = [];
+  var lines = [];
+  var editingIngId = null;
+
+  function loadIngredients(){
+    try {
+      var raw = localStorage.getItem(INGREDIENTS_KEY);
+      if(raw === null){
+        var seed = JSON.parse(JSON.stringify(SAMPLE_INGREDIENTS));
+        try { localStorage.setItem(INGREDIENTS_KEY, JSON.stringify(seed)); } catch(e){ /* ignore */ }
+        return seed;
+      }
+      var arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr : [];
+    } catch(e){ return []; }
+  }
+  function storeIngredients(){
+    try { localStorage.setItem(INGREDIENTS_KEY, JSON.stringify(ingredients)); }
+    catch(e){ alert("Could not save — this browser's storage is unavailable or full."); }
+  }
+  function loadRecipes(){
+    try {
+      var raw = localStorage.getItem(RECIPES_KEY);
+      var arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch(e){ return []; }
+  }
+  function storeRecipes(recipes){
+    try { localStorage.setItem(RECIPES_KEY, JSON.stringify(recipes)); }
+    catch(e){ alert("Could not save — this browser's storage is unavailable or full."); }
+  }
+  function findIngredient(id){
+    for(var i = 0; i < ingredients.length; i++){
+      if(ingredients[i].id === id){ return ingredients[i]; }
+    }
+    return null;
+  }
+
+  function sampleLines(){
+    var spec = [["ing-flour",240,"g"],["ing-sugar",200,"g"],["ing-butter",170,"g"],
+                ["ing-eggs",3,"each"],["ing-vanilla",10,"ml"],["ing-milk",120,"ml"]];
+    return spec.map(function(s){
+      var ing = findIngredient(s[0]);
+      if(ing){ return snapshotLine(ing, s[1], s[2]); }
+      return { source:"lib", ingredientId:s[0], name:s[0], qty:s[1], unit:s[2], cost:0,
+               baseFamily:"weight", unitCostPerBase:0, gPerCup:DEFAULT_G_PER_CUP,
+               purchaseQty:0, purchaseUnit:"g", purchasePrice:0 };
+    });
+  }
+
+  // ---- Inputs ----
+  function readInputs(){
+    var inp = { lines: lines, scaleMode: $("scaleMode").value };
+    BAKERY_FIELDS.forEach(function(id){ inp[id] = $(id).value.trim(); });
+    SCALARS.forEach(function(id){
+      inp[id] = (NUMERIC.indexOf(id) !== -1) ? num(id) : $(id).value.trim();
+    });
+    return inp;
+  }
+  function applyScalars(inp){
+    SCALARS.forEach(function(id){
+      if(inp[id] !== undefined && inp[id] !== null){ $(id).value = inp[id]; }
+    });
+  }
+
+  // ---- Settings: bakery fields + logo (persisted) ----
+  var logoDataUrl = "";
+  var logoImg = (typeof Image !== "undefined") ? new Image() : null;
+
+  function loadSettings(){
+    try {
+      var raw = localStorage.getItem(SETTINGS_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch(e){ return {}; }
+  }
+  function saveSettings(){
+    var s = loadSettings();
+    s.bakeryName  = $("bakeryName").value;
+    s.bakeryPhone = $("bakeryPhone").value;
+    s.bakeryEmail = $("bakeryEmail").value;
+    s.logo = logoDataUrl || "";
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); } catch(e){ /* storage full/blocked */ }
+  }
+  function applySettings(){
+    var s = loadSettings();
+    if(s.bakeryName){ $("bakeryName").value = s.bakeryName; }
+    if(s.bakeryPhone){ $("bakeryPhone").value = s.bakeryPhone; }
+    if(s.bakeryEmail){ $("bakeryEmail").value = s.bakeryEmail; }
+    if(s.logo){ setLogo(s.logo, true); }
+  }
+  function setLogo(dataUrl, silent){
+    logoDataUrl = dataUrl || "";
+    if(logoImg && logoDataUrl){ logoImg.src = logoDataUrl; }
+    $("logoStatus").textContent = logoDataUrl ? "Logo uploaded — it will appear on your PDF price sheets." : "No logo uploaded.";
+    $("removeLogoBtn").style.display = logoDataUrl ? "inline-block" : "none";
+    if(!silent){ saveSettings(); }
+  }
+  $("logoInput").addEventListener("change", function(){
+    var f = $("logoInput").files && $("logoInput").files[0];
+    if(!f){ return; }
+    var reader = new FileReader();
+    reader.onload = function(){ setLogo(String(reader.result || "")); render(); };
+    reader.onerror = function(){ alert("That logo file couldn't be read. Try a PNG or JPG."); };
+    reader.readAsDataURL(f);
+  });
+  $("removeLogoBtn").addEventListener("click", function(){
+    $("logoInput").value = "";
+    setLogo("");
+    render();
+  });
+
+  // ---- Ingredient library UI ----
+  function perBaseText(ing){
+    var uc = ingredientUnitCost(ing);
+    var fam = ingredientBaseFamily(ing);
+    var shown = uc > 0 ? "$" + String(Math.round(uc * 100000) / 100000) : "$0";
+    return fmtNum(parseFloat(ing.purchaseQty) || 0) + " " + ing.purchaseUnit + " · " +
+           usd(parseFloat(ing.purchasePrice) || 0) + " → " + shown + " per " + BASE_LABEL[fam];
+  }
+  function renderLibrary(){
+    var box = $("libraryList");
+    box.innerHTML = "";
+    $("libraryEmpty").style.display = ingredients.length ? "none" : "block";
+    ingredients.forEach(function(ing){
+      var row = document.createElement("div");
+      row.className = "lib-item";
+      var name = document.createElement("span");
+      name.className = "name";
+      name.textContent = ing.name;
+      row.appendChild(name);
+      var detail = document.createElement("span");
+      detail.className = "detail";
+      detail.textContent = perBaseText(ing);
+      row.appendChild(detail);
+      var editBtn = document.createElement("button");
+      editBtn.type = "button";
+      editBtn.className = "btn btn-ghost btn-small lib-edit";
+      editBtn.textContent = "Edit";
+      editBtn.addEventListener("click", function(){
+        editingIngId = ing.id;
+        $("ingFormTitle").textContent = "Edit ingredient";
+        $("ingName").value = ing.name;
+        $("ingQty").value = ing.purchaseQty;
+        $("ingUnit").value = ing.purchaseUnit;
+        $("ingPrice").value = ing.purchasePrice;
+        $("ingGPerCup").value = ing.gPerCup || DEFAULT_G_PER_CUP;
+        $("ingCancelBtn").style.display = "inline-block";
+      });
+      row.appendChild(editBtn);
+      var delBtn = document.createElement("button");
+      delBtn.type = "button";
+      delBtn.className = "btn btn-ghost btn-small lib-delete";
+      delBtn.textContent = "Delete";
+      delBtn.addEventListener("click", function(){
+        ingredients = ingredients.filter(function(x){ return x.id !== ing.id; });
+        if(editingIngId === ing.id){ resetIngForm(); }
+        storeIngredients();
+        renderLibrary();
+        renderLines();
+        render();
+        renderMonitor();
+      });
+      row.appendChild(delBtn);
+      box.appendChild(row);
+    });
+  }
+  function resetIngForm(){
+    editingIngId = null;
+    $("ingFormTitle").textContent = "Add an ingredient";
+    $("ingName").value = "";
+    $("ingQty").value = "";
+    $("ingUnit").value = "g";
+    $("ingPrice").value = "";
+    $("ingGPerCup").value = DEFAULT_G_PER_CUP;
+    $("ingCancelBtn").style.display = "none";
+  }
+  $("ingCancelBtn").addEventListener("click", resetIngForm);
+  $("ingSaveBtn").addEventListener("click", function(){
+    var name = $("ingName").value.trim();
+    if(!name){ alert("Give the ingredient a name first."); return; }
+    var data = {
+      name: name,
+      purchaseQty: num("ingQty"),
+      purchaseUnit: $("ingUnit").value,
+      purchasePrice: num("ingPrice"),
+      gPerCup: num("ingGPerCup") || DEFAULT_G_PER_CUP
+    };
+    if(editingIngId){
+      var ing = findIngredient(editingIngId);
+      if(ing){ for(var k in data){ ing[k] = data[k]; } }
+    } else {
+      data.id = "ing-" + Date.now();
+      ingredients.push(data);
+    }
+    storeIngredients();
+    resetIngForm();
+    renderLibrary();
+    renderLines();
+    render();
+    renderMonitor();
+  });
+
+  // ---- Recipe lines UI ----
+  function renderLines(){
+    var box = $("linesList");
+    box.innerHTML = "";
+    lines.forEach(function(line, idx){
+      var row = document.createElement("div");
+      row.className = "line-row";
+
+      var top = document.createElement("div");
+      top.className = "lr-top";
+      var selWrap = document.createElement("div");
+      var selLabel = document.createElement("label");
+      selLabel.textContent = "Ingredient";
+      selWrap.appendChild(selLabel);
+      var sel = document.createElement("select");
+      sel.className = "line-ing-select";
+      var ph = document.createElement("option");
+      ph.value = ""; ph.textContent = "Pick an ingredient…";
+      sel.appendChild(ph);
+      ingredients.forEach(function(ing){
+        var opt = document.createElement("option");
+        opt.value = ing.id; opt.textContent = ing.name;
+        sel.appendChild(opt);
+      });
+      if(line.source === "lib" && line.ingredientId && !findIngredient(line.ingredientId)){
+        var ghost = document.createElement("option");
+        ghost.value = line.ingredientId;
+        ghost.textContent = (line.name || "Ingredient") + " (saved price)";
+        sel.appendChild(ghost);
+      }
+      var oo = document.createElement("option");
+      oo.value = "__oneoff__"; oo.textContent = "One-off ingredient (enter cost)";
+      sel.appendChild(oo);
+      sel.value = (line.source === "oneoff") ? "__oneoff__" : (line.ingredientId || "");
+      sel.addEventListener("change", function(){
+        var v = sel.value;
+        if(v === "__oneoff__"){
+          line.source = "oneoff";
+          if(line.ingredientId){ line.name = line.name || ""; }
+          line.ingredientId = "";
+        } else if(v === ""){
+          line.source = "lib"; line.ingredientId = ""; line.unitCostPerBase = 0; line.name = "";
+        } else {
+          var ing = findIngredient(v);
+          if(ing){
+            var snap = snapshotLine(ing, line.qty, line.unit);
+            line.source = "lib"; line.ingredientId = snap.ingredientId; line.name = snap.name;
+            line.baseFamily = snap.baseFamily; line.unitCostPerBase = snap.unitCostPerBase;
+            line.gPerCup = snap.gPerCup;
+            line.purchaseQty = snap.purchaseQty; line.purchaseUnit = snap.purchaseUnit;
+            line.purchasePrice = snap.purchasePrice;
+          }
+        }
+        renderLines();
+        render();
+      });
+      selWrap.appendChild(sel);
+      top.appendChild(selWrap);
+      var rm = document.createElement("button");
+      rm.type = "button";
+      rm.className = "btn btn-ghost btn-small line-remove";
+      rm.textContent = "Remove";
+      rm.addEventListener("click", function(){
+        lines.splice(idx, 1);
+        renderLines();
+        render();
+      });
+      top.appendChild(rm);
+      row.appendChild(top);
+
+      var nameField = document.createElement("div");
+      var nameLabel = document.createElement("label");
+      nameLabel.textContent = "One-off name";
+      nameField.appendChild(nameLabel);
+      var nameInput = document.createElement("input");
+      nameInput.type = "text";
+      nameInput.className = "line-name";
+      nameInput.value = line.source === "oneoff" ? (line.name || "") : "";
+      nameInput.setAttribute("placeholder", "e.g. Sprinkles");
+      nameInput.style.display = line.source === "oneoff" ? "block" : "none";
+      nameLabel.style.display = line.source === "oneoff" ? "block" : "none";
+      nameInput.addEventListener("input", function(){
+        line.name = nameInput.value;
+        render();
+      });
+      nameField.appendChild(nameInput);
+      row.appendChild(nameField);
+
+      var mid = document.createElement("div");
+      mid.className = "lr-mid";
+      var qtyWrap = document.createElement("div");
+      var qtyLabel = document.createElement("label");
+      qtyLabel.textContent = "Quantity";
+      qtyWrap.appendChild(qtyLabel);
+      var qtyInput = document.createElement("input");
+      qtyInput.type = "number";
+      qtyInput.className = "line-qty";
+      qtyInput.value = line.qty;
+      qtyWrap.appendChild(qtyInput);
+      mid.appendChild(qtyWrap);
+
+      var unitWrap = document.createElement("div");
+      var unitLabel = document.createElement("label");
+      unitLabel.textContent = "Unit";
+      unitWrap.appendChild(unitLabel);
+      var unitSel = document.createElement("select");
+      unitSel.className = "line-unit";
+      UNIT_LIST.forEach(function(u){
+        var opt = document.createElement("option");
+        opt.value = u; opt.textContent = u;
+        unitSel.appendChild(opt);
+      });
+      unitSel.value = line.unit || "g";
+      unitWrap.appendChild(unitSel);
+      mid.appendChild(unitWrap);
+
+      var costWrap = document.createElement("div");
+      var costLabel = document.createElement("label");
+      costLabel.textContent = "Line cost ($)";
+      costWrap.appendChild(costLabel);
+      var costInput = document.createElement("input");
+      costInput.type = "number";
+      costInput.className = "line-cost";
+      costInput.value = line.source === "oneoff" ? (line.cost || 0) : 0;
+      costInput.style.display = line.source === "oneoff" ? "block" : "none";
+      costLabel.style.display = line.source === "oneoff" ? "block" : "none";
+      costWrap.appendChild(costInput);
+      mid.appendChild(costWrap);
+      row.appendChild(mid);
+
+      var bottom = document.createElement("div");
+      bottom.className = "lr-cost";
+      var bl = document.createElement("span");
+      bl.textContent = "Line cost";
+      bottom.appendChild(bl);
+      var bv = document.createElement("span");
+      bv.className = "val line-cost-display";
+      bottom.appendChild(bv);
+      row.appendChild(bottom);
+
+      function refreshCost(){
+        var c = lineCost(line);
+        bv.textContent = isNaN(c) ? "unit mismatch" : money(c);
+      }
+      qtyInput.addEventListener("input", function(){
+        line.qty = parseFloat(qtyInput.value) || 0;
+        refreshCost();
+        render();
+      });
+      unitSel.addEventListener("change", function(){
+        line.unit = unitSel.value;
+        refreshCost();
+        render();
+      });
+      costInput.addEventListener("input", function(){
+        line.cost = parseFloat(costInput.value) || 0;
+        refreshCost();
+        render();
+      });
+      refreshCost();
+      box.appendChild(row);
+    });
+  }
+  $("addLineBtn").addEventListener("click", function(){
+    lines.push({ source:"lib", ingredientId:"", name:"", qty:0, unit:"g", cost:0,
+                 baseFamily:"weight", unitCostPerBase:0, gPerCup:DEFAULT_G_PER_CUP,
+                 purchaseQty:0, purchaseUnit:"g", purchasePrice:0 });
+    renderLines();
+    render();
+  });
+
+  // ---- Render results + preview ----
+  function render(){
+    var inp = readInputs();
+    var r = calculateRecipe(inp);
+    var factor = scaleFactorFor(inp);
+    var mode = $("pdfMode").value || "retail";
+
+    $("rIngSubtotal").textContent   = money(r.subtotal);
+    $("rWasteAmt").textContent      = money(r.wasteAmount);
+    $("rPackagingOut").textContent  = money(inp.packagingCost);
+    $("rLaborCost").textContent     = money(r.laborCost);
+    $("rOtherOut").textContent      = money(inp.otherCost);
+    $("rEnergyOut").textContent     = money(r.energyCost);
+    $("rBoothOut").textContent      = money(r.boothCost);
+    $("rDeliveryOut").textContent   = money(r.deliveryCost);
+    $("rBatchCost").textContent     = money(r.batchCost);
+    $("rCostPerItem").textContent   = money(r.costPerItem);
+    $("rCostPerSold").textContent   = money(r.costPerSold);
+    $("rPlainRow").style.display    = r.hasFees ? "flex" : "none";
+    $("rRetailPlain").textContent   = money(r.plainRetail);
+    $("rRetailItem").textContent    = money(r.retail);
+    $("rRetailBatch").textContent   = isNaN(r.retail) ? "—" : money(r.retail * r.soldCount);
+    $("rWholesaleItem").textContent = (r.wholesale === null) ? "—" : money(r.wholesale);
+    $("rWholesaleProfit").textContent = (r.wholesaleProfit === null) ? "—" : money(r.wholesaleProfit);
+    $("rWholesaleMargin").textContent = (r.wholesaleMargin === null) ? "—" : pct1(r.wholesaleMargin);
+    $("rMinWholesale").textContent  = money(r.minWholesale);
+    $("rProfitItem").textContent    = money(r.profitPerItem);
+    $("rProfitBatch").textContent   = money(r.profitPerBatch);
+    $("rTrueMargin").textContent    = pct1(r.trueMargin);
+    $("pt30").textContent = money(r.table[30]);
+    $("pt40").textContent = money(r.table[40]);
+    $("pt50").textContent = money(r.table[50]);
+    $("pt60").textContent = money(r.table[60]);
+
+    var sy = scaledYield(inp, factor);
+    $("rScaledYield").textContent = isNaN(sy) ? "—" : fmtNum(Math.round(sy * 10) / 10) + " " + (inp.yieldUnit || "items");
+    $("rScaledBatchCost").textContent = isNaN(factor) ? "—" : money(r.batchCost * factor);
+    var sl = $("scaledList");
+    sl.innerHTML = "";
+    if(!isNaN(factor)){
+      inp.lines.forEach(function(line){
+        var li = document.createElement("li");
+        li.textContent = (line.name || "Ingredient") + " — " + scaledQtyDisplay(line, factor);
+        sl.appendChild(li);
+      });
+    }
+
+    $("marginWarning").style.display = (inp.targetMarginPct > 0 && inp.targetMarginPct < 20 && r.batchCost > 0) ? "block" : "none";
+    $("marginError").style.display   = (inp.targetMarginPct >= 100) ? "block" : "none";
+    $("feeError").style.display      = (r.feeError && inp.targetMarginPct < 100) ? "block" : "none";
+    $("unitWarning").style.display   = r.hasUnitIssue ? "block" : "none";
+    $("wholesaleWarning").style.display = r.wholesaleBelowCost ? "block" : "none";
+
+    renderPreview(inp, r, factor, mode);
+    saveSettings();
+    return {inp: inp, r: r, factor: factor};
+  }
+
+  function renderPreview(inp, r, factor, mode){
+    var today = new Date().toLocaleDateString("en-US",{year:"numeric", month:"long", day:"numeric"});
+    $("pvBakery").textContent = inp.bakeryName || "Your Bakery";
+    var contact = [inp.bakeryPhone, inp.bakeryEmail].filter(function(s){ return !!s; }).join(" · ");
+    $("pvContact").textContent = contact;
+    $("pvSheetTitle").textContent = (mode === "wholesale") ? "Wholesale Price Sheet" : "Price Sheet";
+    $("pvRecipe").textContent = inp.recipeName || "Untitled recipe";
+    $("pvDate").textContent = today;
+    $("pvYield").textContent = yieldText(inp, factor);
+    var ul = $("pvIngredients");
+    ul.innerHTML = "";
+    if(!isNaN(factor)){
+      inp.lines.forEach(function(line){
+        var li = document.createElement("li");
+        li.textContent = (line.name || "Ingredient") + " — " + scaledQtyDisplay(line, factor);
+        ul.appendChild(li);
+      });
+    }
+    var sy = scaledYield(inp, factor);
+    var soldScaled = isNaN(sy) ? NaN : sy * r.sellThroughPct / 100;
+    $("pvRetailBlock").style.display = (mode === "wholesale") ? "none" : "block";
+    $("pvWholesaleBlock").style.display = (mode === "wholesale") ? "block" : "none";
+    $("pvPriceItem").textContent = money(r.retail);
+    $("pvPriceBatch").textContent = (isNaN(r.retail) || isNaN(soldScaled)) ? "—" : money(r.retail * soldScaled);
+    $("pvPriceWholesale").textContent = (r.wholesale === null) ? "—" : money(r.wholesale);
+    $("pvPriceWholesaleBatch").textContent = (r.wholesale === null || isNaN(soldScaled)) ? "—" : money(r.wholesale * soldScaled);
+  }
+
+  BAKERY_FIELDS.forEach(function(id){ $(id).addEventListener("input", render); });
+  SCALARS.forEach(function(id){ $(id).addEventListener("input", render); });
+  $("scaleMode").addEventListener("change", render);
+  $("pdfMode").addEventListener("change", render);
+
+  // ---- Pro state + first-free-PDF ----
+  function isPro(){
+    try { return localStorage.getItem(PRO_KEY) === "1"; } catch(e){ return false; }
+  }
+  function freePdfUsed(){
+    try { return parseInt(localStorage.getItem(FREEPDF_KEY) || "0", 10) || 0; } catch(e){ return 0; }
+  }
+  function setFreePdfUsed(n){
+    try { localStorage.setItem(FREEPDF_KEY, String(n)); } catch(e){ /* ignore */ }
+  }
+  function renderPdfNote(){
+    if(isPro()){
+      $("pdfNote").textContent = "Your clean, branded price sheet — logo, ingredients, and prices. Retail and wholesale sheets are separate: each one shows only its own prices, and your costs, labor rate, waste, and margin never appear on either.";
+    } else if(freePdfUsed() >= 1){
+      $("pdfNote").textContent = "You've used your one free PDF price sheet. Pro unlocks unlimited clean PDFs — plus unlimited saved recipes and the Price Impact Monitor.";
+    } else {
+      $("pdfNote").textContent = "Your first clean PDF price sheet is free — no watermark, your logo, ready to send. After that, PDFs are a Pro feature.";
+    }
+  }
+  function renderPro(){
+    var pro = isPro();
+    $("proGate").style.display = pro ? "none" : "block";
+    $("proArea").style.display = pro ? "block" : "none";
+    renderPdfNote();
+    renderSaved();
+  }
+  $("unlockBtn").addEventListener("click", function(){
+    try { localStorage.setItem(PRO_KEY, "1"); } catch(e){ /* ignore */ }
+    renderPro();
+  });
+  $("lockBtn").addEventListener("click", function(){
+    try { localStorage.removeItem(PRO_KEY); } catch(e){ /* ignore */ }
+    renderPro();
+  });
+
+  // ---- Saved recipes / dashboard ----
+  function recipeSnapshot(inp){
+    return {
+      recipeName: inp.recipeName, yieldCount: inp.yieldCount, yieldUnit: inp.yieldUnit,
+      packagingCost: inp.packagingCost, laborMinutes: inp.laborMinutes, laborRate: inp.laborRate,
+      wastePct: inp.wastePct, otherCost: inp.otherCost,
+      energyCost: inp.energyCost, boothCost: inp.boothCost, deliveryCost: inp.deliveryCost,
+      sellThroughPct: inp.sellThroughPct, feePct: inp.feePct, feeFixed: inp.feeFixed,
+      targetMarginPct: inp.targetMarginPct, wholesaleDiscountPct: inp.wholesaleDiscountPct,
+      minWholesaleMarginPct: inp.minWholesaleMarginPct,
+      lines: JSON.parse(JSON.stringify(inp.lines))
+    };
+  }
+  function recipeCalc(rec){
+    var inp = rec.inputs;
+    inp.lines = inp.lines || [];
+    return calculateRecipe(inp);
+  }
+  function renderSaved(){
+    renderMonitor();
+    var recipes = loadRecipes();
+    var box = $("savedList");
+    box.innerHTML = "";
+
+    $("totRecipes").textContent = String(recipes.length);
+    var margins = [];
+    recipes.forEach(function(rec){
+      var r = recipeCalc(rec);
+      if(!isNaN(r.trueMargin)){ margins.push(r.trueMargin); }
+    });
+    $("totAvgMargin").textContent = margins.length
+      ? (margins.reduce(function(a,b){ return a + b; }, 0) / margins.length * 100).toFixed(1) + "%"
+      : "—";
+    $("freeLimitNote").textContent = isPro()
+      ? "Pro is on — unlimited saved recipes."
+      : "Free plan: " + recipes.length + " of " + FREE_RECIPE_LIMIT + " recipe saves used. Pro saves unlimited recipes.";
+
+    if(!recipes.length){
+      var p = document.createElement("p");
+      p.className = "empty-note";
+      p.textContent = "No saved recipes yet. Cost a recipe above and save it here.";
+      box.appendChild(p);
+      return;
+    }
+    recipes.forEach(function(rec){
+      var row = document.createElement("div");
+      row.className = "saved-item";
+
+      var name = document.createElement("span");
+      name.className = "name";
+      name.textContent = rec.name;
+      row.appendChild(name);
+
+      var r = recipeCalc(rec);
+      var amtEl = document.createElement("span");
+      amtEl.className = "amt";
+      amtEl.textContent = "cost " + money(r.costPerSold) + " · price " + money(r.retail);
+      row.appendChild(amtEl);
+
+      var date = document.createElement("span");
+      date.className = "date";
+      date.textContent = rec.savedAt ? new Date(rec.savedAt).toLocaleDateString("en-US") : "";
+      row.appendChild(date);
+
+      var loadBtn = document.createElement("button");
+      loadBtn.type = "button";
+      loadBtn.className = "btn btn-ghost btn-small";
+      loadBtn.textContent = "Load";
+      loadBtn.addEventListener("click", function(){
+        applyScalars(rec.inputs);
+        lines = JSON.parse(JSON.stringify(rec.inputs.lines || []));
+        renderLines();
+        render();
+      });
+      row.appendChild(loadBtn);
+
+      var dupBtn = document.createElement("button");
+      dupBtn.type = "button";
+      dupBtn.className = "btn btn-ghost btn-small";
+      dupBtn.textContent = "Duplicate";
+      dupBtn.addEventListener("click", function(){
+        var all = loadRecipes();
+        if(!isPro() && all.length >= FREE_RECIPE_LIMIT){
+          alert("Free accounts can save up to " + FREE_RECIPE_LIMIT + " recipes. Pro saves unlimited recipes — subscribe or unlock Pro to duplicate this one.");
+          return;
+        }
+        var copy = JSON.parse(JSON.stringify(rec));
+        copy.id = Date.now() + "";
+        copy.name = rec.name + " (copy)";
+        copy.savedAt = new Date().toISOString();
+        all.unshift(copy);
+        storeRecipes(all);
+        renderSaved();
+      });
+      row.appendChild(dupBtn);
+
+      var delBtn = document.createElement("button");
+      delBtn.type = "button";
+      delBtn.className = "btn btn-ghost btn-small";
+      delBtn.textContent = "Delete";
+      delBtn.addEventListener("click", function(){
+        storeRecipes(loadRecipes().filter(function(x){ return x.id !== rec.id; }));
+        renderSaved();
+      });
+      row.appendChild(delBtn);
+
+      box.appendChild(row);
+    });
+  }
+
+  $("saveRecipeBtn").addEventListener("click", function(){
+    var recipes = loadRecipes();
+    if(!isPro() && recipes.length >= FREE_RECIPE_LIMIT){
+      alert("Free accounts can save up to " + FREE_RECIPE_LIMIT + " recipes. Pro saves unlimited recipes — subscribe or unlock Pro below to save more.");
+      return;
+    }
+    var inp = readInputs();
+    var name = $("recipeSaveName").value.trim() || inp.recipeName || "Untitled recipe";
+    recipes.unshift({ id: Date.now() + "", name: name,
+                      savedAt: new Date().toISOString(), inputs: recipeSnapshot(inp) });
+    storeRecipes(recipes);
+    $("recipeSaveName").value = "";
+    renderSaved();
+  });
+
+  // ---- Ingredient Price Impact Monitor ----
+  // For each saved recipe, compare every library line's snapshot price
+  // against the ingredient's CURRENT library price. Impacts are computed
+  // hypothetically — snapshots are never modified until the baker
+  // approves the update for that recipe + ingredient.
+  function marginAtPrice(price, costPerSold, feeFrac, feeFixed){
+    if(isNaN(price) || isNaN(costPerSold) || !(price > 0)){ return NaN; }
+    return (price - price * feeFrac - feeFixed - costPerSold) / price;
+  }
+  function recalcWithLibrary(rec, ingredientId){
+    var ing = findIngredient(ingredientId);
+    if(!ing){ return null; }
+    var inp = JSON.parse(JSON.stringify(rec.inputs));
+    inp.lines = (inp.lines || []).map(function(line){
+      if(line.source === "lib" && line.ingredientId === ingredientId){
+        var snap = snapshotLine(ing, line.qty, line.unit);
+        line.name = snap.name;
+        line.baseFamily = snap.baseFamily;
+        line.unitCostPerBase = snap.unitCostPerBase;
+        line.gPerCup = snap.gPerCup;
+        line.purchaseQty = snap.purchaseQty;
+        line.purchaseUnit = snap.purchaseUnit;
+        line.purchasePrice = snap.purchasePrice;
+      }
+      return line;
+    });
+    return calculateRecipe(inp);
+  }
+  function monitorImpacts(){
+    var impacts = [];
+    loadRecipes().forEach(function(rec){
+      var seen = {};
+      (rec.inputs.lines || []).forEach(function(line){
+        if(line.source !== "lib" || !line.ingredientId || seen[line.ingredientId]){ return; }
+        var ing = findIngredient(line.ingredientId);
+        if(!ing){ return; }
+        var newUC = ingredientUnitCost(ing);
+        var oldUC = parseFloat(line.unitCostPerBase) || 0;
+        if(Math.abs(newUC - oldUC) < 1e-12){ return; }
+        seen[line.ingredientId] = true;
+        var oldR = recipeCalc(rec);
+        var newR = recalcWithLibrary(rec, line.ingredientId);
+        if(!newR){ return; }
+        var feeFrac  = (parseFloat(rec.inputs.feePct) || 0) / 100;
+        var feeFixed = parseFloat(rec.inputs.feeFixed) || 0;
+        var setPrice = oldR.retail;
+        var oldMargin = marginAtPrice(setPrice, oldR.costPerSold, feeFrac, feeFixed);
+        var newMargin = marginAtPrice(setPrice, newR.costPerSold, feeFrac, feeFixed);
+        var mf = (parseFloat(rec.inputs.targetMarginPct) || 0) / 100;
+        var recommended = (!isNaN(newR.costPerSold) && (mf + feeFrac) < 1)
+          ? round2((newR.costPerSold + feeFixed) / (1 - mf - feeFrac)) : NaN;
+        var oldPurchase = (line.purchasePrice !== undefined && line.purchasePrice !== null)
+          ? parseFloat(line.purchasePrice) : null;
+        var newPurchase = parseFloat(ing.purchasePrice) || 0;
+        var pctChange;
+        if(oldPurchase !== null && oldPurchase > 0){ pctChange = (newPurchase - oldPurchase) / oldPurchase * 100; }
+        else if(oldUC > 0){ pctChange = (newUC - oldUC) / oldUC * 100; }
+        else { pctChange = NaN; }
+        impacts.push({
+          recipeId: rec.id, recipeName: rec.name,
+          ingredientId: line.ingredientId, ingredientName: ing.name,
+          oldPurchasePrice: oldPurchase, newPurchasePrice: newPurchase,
+          purchaseQty: parseFloat(ing.purchaseQty) || 0, purchaseUnit: ing.purchaseUnit,
+          pctChange: pctChange, setPrice: setPrice,
+          oldMargin: oldMargin, newMargin: newMargin, recommendedPrice: recommended
+        });
+      });
+    });
+    return impacts;
+  }
+  function applyImpact(recipeId, ingredientId){
+    var ing = findIngredient(ingredientId);
+    if(!ing){ return; }
+    var recipes = loadRecipes();
+    recipes.forEach(function(rec){
+      if(rec.id !== recipeId){ return; }
+      rec.inputs.lines = (rec.inputs.lines || []).map(function(line){
+        if(line.source === "lib" && line.ingredientId === ingredientId){
+          var snap = snapshotLine(ing, line.qty, line.unit);
+          line.name = snap.name;
+          line.baseFamily = snap.baseFamily;
+          line.unitCostPerBase = snap.unitCostPerBase;
+          line.gPerCup = snap.gPerCup;
+          line.purchaseQty = snap.purchaseQty;
+          line.purchaseUnit = snap.purchaseUnit;
+          line.purchasePrice = snap.purchasePrice;
+        }
+        return line;
+      });
+    });
+    storeRecipes(recipes);
+    renderSaved();
+  }
+  function renderMonitor(){
+    var box = $("monitorList");
+    if(!box){ return; }
+    box.innerHTML = "";
+    var impacts = monitorImpacts();
+    $("monitorEmpty").style.display = impacts.length ? "none" : "block";
+    impacts.forEach(function(im){
+      var row = document.createElement("div");
+      row.className = "impact-item";
+      var txt = document.createElement("p");
+      txt.className = "txt";
+      var pricePart = (im.oldPurchasePrice !== null)
+        ? usd(im.oldPurchasePrice) + " → " + usd(im.newPurchasePrice)
+        : "price changed";
+      var pctPart = isNaN(im.pctChange) ? "" : " (" + (im.pctChange >= 0 ? "+" : "") + im.pctChange.toFixed(1) + "%)";
+      txt.textContent = im.recipeName + " — " + im.ingredientName + ": " + pricePart + pctPart +
+        ". Margin at your current price of " + money(im.setPrice) + ": " + pct1(im.oldMargin) +
+        " → " + pct1(im.newMargin) + ". Recommended new price: " + money(im.recommendedPrice) + ".";
+      row.appendChild(txt);
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "btn btn-ghost btn-small monitor-apply";
+      btn.textContent = "Apply new " + im.ingredientName + " price to " + im.recipeName;
+      btn.addEventListener("click", function(){ applyImpact(im.recipeId, im.ingredientId); });
+      row.appendChild(btn);
+      box.appendChild(row);
+    });
+  }
+
+  // ---- Downloads: backup JSON / CSV ----
+  function download(filename, content, type){
+    var blob = new Blob([content], {type: type});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 500);
+  }
+
+  $("exportBackupBtn").addEventListener("click", function(){
+    var payload = {
+      app: "CottageMargin", version: 1,
+      exportedAt: new Date().toISOString(),
+      pro: isPro(),
+      settings: loadSettings(),
+      ingredients: ingredients,
+      recipes: loadRecipes()
+    };
+    download("cottagemargin-backup-" + new Date().toISOString().slice(0,10) + ".json",
+             JSON.stringify(payload, null, 2), "application/json");
+  });
+
+  function csvCell(v){
+    var s = (v === undefined || v === null) ? "" : String(v);
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  $("exportCsvBtn").addEventListener("click", function(){
+    var recipes = loadRecipes();
+    var lines = [["Recipe","Yield","Batch cost","Cost per item made","Cost per item sold","Sell-through %","Retail price per item","Wholesale price per item","Target margin %","Saved date"].join(",")];
+    recipes.forEach(function(rec){
+      var r = recipeCalc(rec);
+      lines.push([
+        csvCell(rec.name),
+        csvCell((rec.inputs.yieldCount || 0) + " " + (rec.inputs.yieldUnit || "")),
+        csvCell(isNaN(r.batchCost) ? "" : r.batchCost.toFixed(2)),
+        csvCell(isNaN(r.costPerItem) ? "" : r.costPerItem.toFixed(2)),
+        csvCell(isNaN(r.costPerSold) ? "" : r.costPerSold.toFixed(2)),
+        csvCell(r.sellThroughPct),
+        csvCell(isNaN(r.retail) ? "" : r.retail.toFixed(2)),
+        csvCell(r.wholesale === null || isNaN(r.wholesale) ? "" : r.wholesale.toFixed(2)),
+        csvCell(rec.inputs.targetMarginPct),
+        csvCell(rec.savedAt ? new Date(rec.savedAt).toLocaleDateString("en-US") : "")
+      ].join(","));
+    });
+    download("cottagemargin-recipes-" + new Date().toISOString().slice(0,10) + ".csv",
+             lines.join("\n"), "text/csv");
+  });
+
+  $("importInput").addEventListener("change", function(){
+    var f = $("importInput").files && $("importInput").files[0];
+    if(!f){ return; }
+    var reader = new FileReader();
+    reader.onload = function(){
+      try {
+        var data = JSON.parse(String(reader.result || ""));
+        if(!data || data.app !== "CottageMargin" ||
+           !Array.isArray(data.recipes) || !Array.isArray(data.ingredients)){
+          throw new Error("bad file");
+        }
+        ingredients = data.ingredients;
+        storeIngredients();
+        storeRecipes(data.recipes);
+        if(data.settings){
+          try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(data.settings)); } catch(e){ /* ignore */ }
+          logoDataUrl = "";
+          applySettings();
+        }
+        if(data.pro){ try { localStorage.setItem(PRO_KEY, "1"); } catch(e){ /* ignore */ } }
+        resetIngForm();
+        renderLibrary();
+        renderLines();
+        renderPro();
+        render();
+        alert("Backup restored: " + data.recipes.length + " recipe(s) and " +
+              data.ingredients.length + " ingredient(s) imported.");
+      } catch(e){
+        alert("That file doesn't look like a CottageMargin backup. Nothing was changed.");
+      }
+      $("importInput").value = "";
+    };
+    reader.onerror = function(){ alert("That file couldn't be read. Nothing was changed."); };
+    reader.readAsText(f);
+  });
+
+  // ---- Professional PDF price sheet ----
+  // IMPORTANT: the buyer PDF shows ingredients and prices ONLY — never
+  // ingredient costs, labor rate, waste, or margin. Retail and wholesale
+  // sheets are separate documents: each shows only its own prices.
+  $("pdfBtn").addEventListener("click", function(){
+    var pro = isPro();
+    if(!pro && freePdfUsed() >= 1){
+      alert("You've used your one free PDF price sheet. Subscribe ($12/month founding price) or tap \u201CI already subscribed \u2014 unlock Pro\u201D below for unlimited PDFs.");
+      return;
+    }
+    if(!window.jspdf || !window.jspdf.jsPDF){
+      alert("The PDF library couldn't load. Check your internet connection and try again — everything else on this page works offline. (Your free PDF has not been used.)");
+      return;
+    }
+    var out = render();
+    var inp = out.inp, r = out.r, factor = out.factor;
+    if(isNaN(r.retail) || !(r.retail > 0)){
+      alert("Fix the recipe numbers first (check the yield, margin, and fees), then download the PDF.");
+      return;
+    }
+    var mode = $("pdfMode").value || "retail";
+    if(mode === "wholesale" && (r.wholesale === null || isNaN(r.wholesale))){
+      alert("Set a wholesale discount above 0% first — a wholesale sheet needs a wholesale price. (Your free PDF has not been used.)");
+      return;
+    }
+
+    var jsPDF = window.jspdf.jsPDF;
+    var doc = new jsPDF({unit:"pt", format:"letter"});
+    var pageW = doc.internal.pageSize.getWidth();
+    var marginX = 56;
+    var y = 60;
+
+    var bakery = inp.bakeryName || "Your Bakery";
+    var today = new Date().toLocaleDateString("en-US",{year:"numeric", month:"long", day:"numeric"});
+
+    if(logoDataUrl && logoImg && logoImg.complete && logoImg.naturalWidth > 0){
+      var maxW = 150, maxH = 42;
+      var w = logoImg.naturalWidth, h = logoImg.naturalHeight;
+      var scale = Math.min(maxW / w, maxH / h);
+      var fmt = logoDataUrl.indexOf("data:image/png") === 0 ? "PNG" : "JPEG";
+      try {
+        doc.addImage(logoDataUrl, fmt, marginX, y - 8, Math.round(w * scale), Math.round(h * scale));
+        y += Math.round(h * scale) + 14;
+      } catch(e){ /* bad image data — skip logo */ }
+    }
+    doc.setFont("helvetica","bold"); doc.setFontSize(20); doc.setTextColor(58,42,30);
+    doc.text(bakery, marginX, y); y += 16;
+    var contact = [inp.bakeryPhone, inp.bakeryEmail].filter(function(s){ return !!s; }).join("  ·  ");
+    if(contact){
+      doc.setFont("helvetica","normal"); doc.setFontSize(10.5); doc.setTextColor(125,106,88);
+      doc.text(contact, marginX, y); y += 8;
+    }
+    doc.setDrawColor(168,91,35); doc.setLineWidth(2.5);
+    doc.line(marginX, y, pageW - marginX, y); y += 30;
+
+    doc.setTextColor(58,42,30); doc.setFontSize(15);
+    doc.text(mode === "wholesale" ? "Wholesale Price Sheet" : "Price Sheet", marginX, y); y += 20;
+    doc.setFont("helvetica","normal"); doc.setFontSize(11); doc.setTextColor(125,106,88);
+    doc.text("Recipe: " + (inp.recipeName || "Untitled recipe"), marginX, y); y += 16;
+    doc.text("Date: " + today, marginX, y); y += 26;
+
+    doc.setTextColor(58,42,30); doc.setFont("helvetica","bold"); doc.setFontSize(12);
+    doc.text("Makes", marginX, y); y += 18;
+    doc.setFont("helvetica","normal"); doc.setFontSize(11.5);
+    doc.text(yieldText(inp, factor), marginX, y); y += 24;
+
+    doc.setFont("helvetica","bold"); doc.setFontSize(12);
+    doc.text("Ingredients", marginX, y); y += 18;
+    doc.setFont("helvetica","normal"); doc.setFontSize(11.5);
+    inp.lines.forEach(function(line){
+      doc.text("\u2022  " + (line.name || "Ingredient") + " — " + scaledQtyDisplay(line, factor), marginX + 6, y);
+      y += 17;
+    });
+    y += 14;
+
+    var sy = scaledYield(inp, factor);
+    var soldScaled = isNaN(sy) ? NaN : sy * r.sellThroughPct / 100;
+    doc.setFont("helvetica","bold"); doc.setFontSize(12);
+    doc.text("Prices", marginX, y); y += 20;
+    doc.setFontSize(12.5);
+    if(mode === "wholesale"){
+      doc.text("Wholesale price per item:", marginX, y);
+      doc.setTextColor(124,63,20);
+      doc.text(usd(r.wholesale), marginX + 215, y);
+      doc.setTextColor(58,42,30); y += 20;
+      doc.setFontSize(11.5); doc.setFont("helvetica","normal");
+      doc.text("Full batch (" + yieldText(inp, factor) + "): " + usd(r.wholesale * soldScaled), marginX, y); y += 18;
+    } else {
+      doc.text("Price per item:", marginX, y);
+      doc.setTextColor(124,63,20);
+      doc.text(usd(r.retail), marginX + 165, y);
+      doc.setTextColor(58,42,30); y += 20;
+      doc.setFontSize(11.5); doc.setFont("helvetica","normal");
+      doc.text("Full batch (" + yieldText(inp, factor) + "): " + usd(r.retail * soldScaled), marginX, y); y += 18;
+    }
+    y += 12;
+    doc.setFontSize(10);
+    doc.text(bakery + (contact ? "  ·  " + contact : ""), marginX, y);
+
+    var fname = "cottagemargin-" + mode + "-sheet-" + new Date().toISOString().slice(0,10) + ".pdf";
+    doc.save(fname);
+    if(!pro){
+      setFreePdfUsed(freePdfUsed() + 1);
+      renderPdfNote();
+    }
+  });
+
+  // ---- Init ----
+  $("subscribeBtn").href = STRIPE_URL;
+  ingredients = loadIngredients();
+  lines = sampleLines();
+  applySettings();
+  renderLibrary();
+  renderLines();
+  renderPro();
+  render();
+
+  // Test/automation hook (harmless in production): exposes the pure math and
+  // state readers so the costing engine can be verified headlessly.
+  window.CottageMargin = {
+    calculateRecipe: calculateRecipe,
+    lineCost: lineCost,
+    convertQty: convertQty,
+    ingredientUnitCost: ingredientUnitCost,
+    ingredientBaseFamily: ingredientBaseFamily,
+    snapshotLine: snapshotLine,
+    scaleFactorFor: scaleFactorFor,
+    scaledQtyDisplay: scaledQtyDisplay,
+    round2: round2,
+    loadRecipes: loadRecipes,
+    loadIngredients: loadIngredients,
+    isPro: isPro,
+    freePdfUsed: freePdfUsed,
+    monitorImpacts: monitorImpacts,
+    applyImpact: applyImpact,
+    FREE_RECIPE_LIMIT: FREE_RECIPE_LIMIT,
+    UNITS: UNITS,
+    ML_PER_CUP: ML_PER_CUP,
+    DEFAULT_G_PER_CUP: DEFAULT_G_PER_CUP,
+    getLines: function(){ return lines; },
+    getIngredients: function(){ return ingredients; }
+  };
+})();
+</script>
+</body>
+</html>
